@@ -69,9 +69,8 @@ impl Ciphertext {
 
     pub fn dec(&self, kp: &Keypair) -> Message {
         let nn = &kp.ek.n * &kp.ek.n;
-        let mut x = self.0.modpow(&kp.dk.lambda, &nn);
-        x.dec();
-        let lx = x / &kp.ek.n;
+        let x = self.0.modpow(&kp.dk.lambda, &nn);
+        let lx = (x - BigUint::from(1u8)) / &kp.ek.n;
         let m = (lx * &kp.dk.mu) % &kp.ek.n;
 
         Message(m)
