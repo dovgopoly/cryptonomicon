@@ -10,6 +10,7 @@ pub struct Keypair {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Ciphertext(BigUint);
 
 #[derive(Debug)]
@@ -90,19 +91,36 @@ mod tests {
 
     #[test]
     fn basic_flow() {
-        let paillier = Keypair::new();
+        let keypair = Keypair::new();
 
-        let msg1 = Message(BigUint::from(1000u16));
-        let msg2 = Message(BigUint::from(2000u16));
+        let msg1 = Message(BigUint::from(1_000u16));
+        let msg2 = Message(BigUint::from(2_000u16));
 
-        let mut ct1 = Ciphertext::enc(&msg1, &paillier.ek);
-        let ct2 = Ciphertext::enc(&msg2, &paillier.ek);
+        let mut ct1 = Ciphertext::enc(&msg1, &keypair.ek);
+        let ct2 = Ciphertext::enc(&msg2, &keypair.ek);
 
         for _ in 0..1_000 {
-            ct1.add_assign(&ct2, &paillier.ek);
+            ct1.add_assign(&ct2, &keypair.ek);
         }
 
-        println!("{:?}", ct1.dec(&paillier));
-        println!("{:?}", ct2.dec(&paillier));
+        assert!(ct2.dec(&keypair).0.eq(&msg2.0));
+        assert!(ct1.dec(&keypair).0.eq(&(&msg1.0 + BigUint::from(1_000u16) * &msg2.0)));
+    }
+
+    #[test]
+    fn large_messages_flow() {
+        let keypair = Keypair::new();
+
+        let msg = Message(&keypair.ek.n / BigUint::from(10u8));
+        let cts = (0..10).into_iter().map(
+            |_| Ciphertext::enc(&msg, &keypair.ek)
+        ).collect::<Vec<_>>();
+        let agg_ct = cts.into_iter().reduce(|mut a, b| {
+            a.add_assign(&b, &keypair.ek);
+            a
+        }).unwrap();
+        let dec_msg = agg_ct.dec(&keypair);
+
+        assert!(dec_msg.0.eq(&(&msg.0 * BigUint::from(10u8))))
     }
 }
