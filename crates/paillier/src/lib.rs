@@ -62,7 +62,7 @@ impl Ciphertext {
 
         let m = &msg.0 % &ek.n;
         let nn = &ek.n * &ek.n;
-        let ct = ek.g.modpow(&m, &nn) * r.modpow(&ek.n, &nn);
+        let ct = (ek.g.modpow(&m, &nn) * r.modpow(&ek.n, &nn)) % nn;
 
         Self(ct)
     }
