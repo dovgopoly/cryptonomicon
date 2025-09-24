@@ -10,7 +10,6 @@ pub struct Keypair {
 }
 
 #[derive(Debug)]
-#[derive(Clone)]
 pub struct Ciphertext(BigUint);
 
 #[derive(Debug)]
